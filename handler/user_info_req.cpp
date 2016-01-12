@@ -6,7 +6,9 @@
 #include "user_info_req.hpp"
 #include "../cd_user.hpp"
 
-bool login_req(std::shared_ptr<cd_user> user_ptr, Json) {
+bool login_req(std::shared_ptr<cd_user> user_ptr, Json payload) {
+
+  std::string uid = payload["uid"].string_value();
 
   json11::Json res = json11::Json::object {
     { "type", "login_res" },
@@ -18,7 +20,7 @@ bool login_req(std::shared_ptr<cd_user> user_ptr, Json) {
   return true;
 }
 
-bool logout_req(std::shared_ptr<cd_user> user_ptr, Json) {
+bool logout_req(std::shared_ptr<cd_user> user_ptr, Json payload) {
 
   json11::Json res = json11::Json::object {
     { "type", "logout_res" },
@@ -29,7 +31,7 @@ bool logout_req(std::shared_ptr<cd_user> user_ptr, Json) {
   return true;
 }
 
-bool update_alive_req(std::shared_ptr<cd_user> user_ptr, Json) {
+bool update_alive_req(std::shared_ptr<cd_user> user_ptr, Json payload) {
   user_ptr->update_alive_t();
   return true;
 }
