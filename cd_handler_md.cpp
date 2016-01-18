@@ -2,6 +2,7 @@
 #include <iostream>
 #include "cd_handler_md.hpp"
 #include "handler/user_info_req.hpp"
+#include "handler/lobby_req.hpp"
 
 cd_handler_md::cd_handler_md() {
 
@@ -20,6 +21,9 @@ bool cd_handler_md::init() {
   auto r = true;
 
   r &= add_payload("login_req", login_req);
+  r &= add_payload("join_lobby_req", join_lobby_req);
+  r &= add_payload("leave_lobby_req", leave_lobby_req);
+  r &= add_payload("send_chat_noti", send_chat_noti);
   /*
   r &= add_payload("join_room_req", join_room_req);
   r &= add_payload("leave_room_req", leave_room_req);
