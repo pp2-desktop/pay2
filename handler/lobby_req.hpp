@@ -12,4 +12,9 @@ bool join_lobby_req(std::shared_ptr<cd_user>, Json payload);
 bool leave_lobby_req(std::shared_ptr<cd_user>, Json payload);
 bool send_chat_noti(std::shared_ptr<cd_user> user_ptr, Json payload);
 
+bool room_list_req(std::shared_ptr<cd_user>, Json payload);
+bool chat_list_req(std::shared_ptr<cd_user>, Json payload);
+
+
+
 #endif

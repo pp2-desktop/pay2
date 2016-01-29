@@ -27,7 +27,7 @@ bool leave_lobby_req(std::shared_ptr<cd_user> user_ptr, Json payload) {
   auto r = lobby_md::get().leave_user(user_ptr);
 
   json11::Json res = json11::Json::object {
-    { "type", "join_lobby_res" },
+    { "type", "leave_lobby_res" },
     { "result", r }
   };
 
@@ -37,5 +37,18 @@ bool leave_lobby_req(std::shared_ptr<cd_user> user_ptr, Json payload) {
 
 bool send_chat_noti(std::shared_ptr<cd_user> user_ptr, Json payload) {
   lobby_md::get().send_chat(payload);
+  return true;
+}
+
+bool room_list_req(std::shared_ptr<cd_user>, Json payload) {
+
+
+
+  return true;
+}
+
+bool chat_list_req(std::shared_ptr<cd_user>, Json payload) {
+
+
   return true;
 }

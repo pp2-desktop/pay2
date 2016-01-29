@@ -17,16 +17,19 @@ bool lobby_md::join_user(user_ptr user) {
     return false;
   }
 
+  std::cout << "join user" << std::endl;
+
   users_[user->get_uid()] = user;
   return true;
 }
 
 bool lobby_md::leave_user(user_ptr user) {
+  std::cout << "leave user" << std::endl;
 
   std::lock_guard<std::mutex> lock(m);
 
   if(users_.find( user->get_uid() ) == users_.end()) {
-    std::cout << "유저가 이미 존재함" << std::endl;
+    std::cout << "유저가 존재하지 않음" << std::endl;
     return false;
   }
 
@@ -47,9 +50,80 @@ void lobby_md::send_chat(Json payload) {
     { "nickname", nickname },
     { "msg", msg }
   };
-
+  
+  std::cout << "1111111111111111" << std::endl;
   for(auto& it : users_) {
+  std::cout << "222222222222222222" << std::endl;
     it.second->send2(chat_msg);
   }
 
 }
+
+void lobby_md::create_room_noti(int rid, std::string title, std::string password) {
+  std::lock_guard<std::mutex> lock(m);
+
+  json11::Json noti = json11::Json::object {
+    { "type", "create_room_noti" },
+    { "rid", rid },
+    { "title", title },
+    { "password", password }
+  };
+
+  for(auto& it : users_) {
+    it.second->send2(noti);
+  }
+}
+
+void lobby_md::destroy_room_noti(int rid) {
+  std::lock_guard<std::mutex> lock(m);
+
+  json11::Json noti = json11::Json::object {
+    { "type", "destroy_room_noti" },
+    { "rid", rid }
+  };
+
+  for(auto& it : users_) {
+    it.second->send2(noti);
+  }
+}
+
+void lobby_md::full_room_noti(int rid) {
+  std::lock_guard<std::mutex> lock(m);
+
+  json11::Json noti = json11::Json::object {
+    { "type", "full_room_noti" },
+    { "rid", rid }
+  };
+
+  for(auto& it : users_) {
+    it.second->send2(noti);
+  }
+}
+
+void lobby_md::start_game_noti(int rid) {
+  std::lock_guard<std::mutex> lock(m);
+
+  json11::Json noti = json11::Json::object {
+    { "type", "start_game_noti" },
+    { "rid", rid }
+  };
+
+  for(auto& it : users_) {
+    it.second->send2(noti);
+  }
+}
+
+/*
+void lobby_md::update_room_info_noti(std::string type, int rid) {
+  std::lock_guard<std::mutex> lock(m);
+
+  json11::Json chat_msg = json11::Json::object {
+    { "type", type },
+    { "rid", rid }
+  };
+
+  for(auto& it : users_) {
+    it.second->send2(chat_msg);
+  }
+}
+*/

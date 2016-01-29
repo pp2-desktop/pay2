@@ -1,5 +1,6 @@
 #include "cd_user.hpp"
 #include <iostream>
+#include "lobby_md.hpp"
 
 
 typedef std::shared_ptr<cd_user> user_ptr;  
@@ -27,5 +28,10 @@ void cd_user::send2(json11::Json payload) {
 }
 
 void cd_user::destory() {
+  auto sp = std::shared_ptr<cd_user>(shared_from_this());
+  if(auto room = room_ptr.lock()) {
+    play_md::get().leave_user(sp);
+  }
 
+  lobby_md::get().leave_user(sp);
 }

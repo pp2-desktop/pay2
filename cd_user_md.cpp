@@ -1,4 +1,5 @@
 #include "cd_user_md.hpp"
+#include "play_md.hpp"
 #include <thread>
 #include <chrono>
 
@@ -21,6 +22,13 @@ void cd_user_md::start_check_alive() {
         auto user = kv.second;
         //std::cout << kv.first << " has value " << kv.second << std::endl;
         if(static_cast<time_t>(n - kv.second->get_alive_t()) > WAIT_SEC) {
+
+          /*
+	  if(user->room_ptr != nullptr) {
+	    play_md::get().leave_user(user);
+	  }
+          */
+
           /*
             if(user->get_is_seat()) {
             json11::Json res = json11::Json::object {

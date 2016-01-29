@@ -8,8 +8,9 @@ using namespace json11;
 
 class cd_user;
 
-bool login_req(std::shared_ptr<cd_user>, Json);
-bool logout_req(std::shared_ptr<cd_user>, Json);
-bool update_alive_req(std::shared_ptr<cd_user> user_ptr, Json);
+bool login_req(std::shared_ptr<cd_user>, Json payload);
+bool logout_req(std::shared_ptr<cd_user>, Json payload);
+bool update_alive_req(std::shared_ptr<cd_user> user_ptr, Json payload);
+bool get_user_info_req(std::shared_ptr<cd_user> user_ptr, Json payload);
 
 #endif

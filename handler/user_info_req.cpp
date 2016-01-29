@@ -35,3 +35,10 @@ bool update_alive_req(std::shared_ptr<cd_user> user_ptr, Json payload) {
   user_ptr->update_alive_t();
   return true;
 }
+
+bool get_user_info_req(std::shared_ptr<cd_user> user_ptr, Json payload) {
+  std::string uid = payload["uid"].string_value();
+  // uid 기준으로 유저 정보를 가져옴
+
+  return true;
+}

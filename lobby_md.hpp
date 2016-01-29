@@ -24,6 +24,13 @@ public:
   bool leave_user(user_ptr user);
   void send_chat(Json payload);
 
+  void create_room_noti(int rid, std::string title, std::string password);
+  void destroy_room_noti(int rid);
+
+  void full_room_noti(int rid);
+  void start_game_noti(int rid);
+  //void update_room_info_noti(std::string type, int rid);
+
   static lobby_md& get() {
     static lobby_md obj;
     return obj;
