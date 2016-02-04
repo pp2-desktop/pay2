@@ -42,15 +42,25 @@ void stage::set_stage_info(std::string img, std::vector<vec2> hidden_points) {
 }
 
 bool stage::check_point(user_type type, vec2 point) {
+
+  auto index = 0;
   for(auto& point_info : hidden_point_infos) {
     if(std::get<0>(point_info) == user_type::none && std::get<1>(point_info) == point) {
-      point_info = std::tuple<user_type, vec2>(type, point);
+      //point_info = std::tuple<user_type, vec2>(type, point);
 
-      if(type == user_type::master) master_find_count++; 
-      else opponent_find_count++;
+      std::cout <<"index: " << index << std::endl;
+      std::get<0>(hidden_point_infos[index]) = type;
+
+      if(type == user_type::master) {
+        master_find_count++; 
+      }
+      else {
+        opponent_find_count++;
+      }
 
       return true;
     }
+    index++;
   }
   return false;
 }
@@ -62,10 +72,19 @@ bool stage::is_all_ready() {
 }
 
 user_type stage::check_stage_end() {
+  
+  if(master_find_count + opponent_find_count == hidden_point_infos.size()) {
+    if(master_find_count > opponent_find_count) {
+      return user_type::master;
+    } else {
+      return user_type::opponent;
+    }
+  }
+  /*
   if(master_find_count >= 3) return user_type::master;
   
   if(opponent_find_count >=3) return user_type::opponent;
-
+  */
   return user_type::none;
 }
 
@@ -192,22 +211,31 @@ int game_info::ready_stage(user_type type) {
   return -1;
 }
 
-// 스테이지 끝난거 알려줌
-std::tuple<bool, user_type> game_info::check_point(user_type type, vec2 v) {
-  if(stages[stage_count].check_point(type, v)) {
-    auto r = stages[stage_count].check_stage_end();
-    if(r == user_type::master) {
-      master_win_count++;
-      return std::tuple<bool, user_type>(true, user_type::master);
-    } else if(r == user_type::opponent) {
-      opponent_win_count++;
-      return std::tuple<bool, user_type>(true, user_type::opponent);
-    } 
+// 스테이지 끝난거 알려줌, 승자 유저타이브,  포인트 찾았는지, 유저타입
+check_point_rtn game_info::check_point(user_type type, vec2 v) {
 
-    return std::tuple<bool, user_type>(false, type);  
+  check_point_rtn rtn;
+
+  // 포인트 찾았는지 먼저 검사
+  if(stages[stage_count].check_point(type, v)) {
+    rtn.is_find_point = true;
+    rtn.find_point_user_type = type;
+
+    auto r = stages[stage_count].check_stage_end();
+
+    if(r == user_type::master) {
+      rtn.is_stage_end = true;
+      rtn.stage_user_type = user_type::master;
+      master_win_count++;
+    } else if(r == user_type::opponent) {
+      rtn.is_stage_end = true;
+      rtn.stage_user_type = user_type::opponent;
+      opponent_win_count++;
+    }
+    return rtn;
   }
   
   // 없는 결과값
-  return std::tuple<bool, user_type>(false, user_type::none);
+  return rtn;
 }
 

@@ -50,7 +50,7 @@ void lobby_md::send_chat(Json payload) {
     { "nickname", nickname },
     { "msg", msg }
   };
-  
+
   std::cout << "1111111111111111" << std::endl;
   for(auto& it : users_) {
   std::cout << "222222222222222222" << std::endl;

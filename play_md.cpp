@@ -169,8 +169,14 @@ void room::check_point(user_ptr user, int user_stage_count, vec2 point) {
 
   auto r = game_info_ptr->check_point(type, point);
 
-  auto is_stage_end = std::get<0>(r);
-  auto stage_winner = std::get<1>(r);
+  if(!r.is_find_point) {
+    std::cout << "[debug] 벌써 유저가 찾아서 중복처리해버림" << std::endl;
+    return;
+  }
+
+
+  auto is_stage_end = r.is_stage_end;
+  auto stage_winner = r.stage_user_type;
 
   auto is_game_end = game_info_ptr->check_game_end();
 

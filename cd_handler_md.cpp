@@ -21,8 +21,12 @@ bool cd_handler_md::init() {
   std::cout << "cd_handler_md init called" << std::endl;
   auto r = true;
 
-  // lobby_req
+
+  // user req
   r &= add_payload("login_req", login_req);
+  r &= add_payload("create_guest_account_req", create_guest_account_req);
+
+  // lobby_req
   r &= add_payload("join_lobby_req", join_lobby_req);
   r &= add_payload("leave_lobby_req", leave_lobby_req);
   r &= add_payload("send_chat_noti", send_chat_noti);

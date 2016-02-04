@@ -14,8 +14,10 @@ cd_user_md::~cd_user_md() {
 }
 
 void cd_user_md::start_check_alive() {
+
   while(is_on_) {
     auto n = time(NULL); 
+
     {
       std::lock_guard<std::mutex> lock(m);
       for (auto& kv : users_) {
@@ -44,9 +46,10 @@ void cd_user_md::start_check_alive() {
         }
       }
     }
+
+    std::cout << "[debug] wait for 30 sec" << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(WAIT_SEC));
   }
-  std::cout << "[debug] wait for 30 sec" << std::endl;
-  std::this_thread::sleep_for(std::chrono::seconds(WAIT_SEC));	 
 }
 
 void cd_user_md::stop_check_alive() {

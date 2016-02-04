@@ -28,6 +28,20 @@ struct vec2 {
 
 enum user_type { none=0, master, opponent };
 
+struct check_point_rtn {
+  bool is_stage_end;
+  user_type stage_user_type;
+  bool is_find_point;
+  user_type find_point_user_type;
+  check_point_rtn() {
+    is_stage_end = false;
+    stage_user_type = none;
+    is_find_point = false;
+    find_point_user_type = none;
+  }
+  ~check_point_rtn() {}
+};
+
 class stage {
 public:
   stage();
@@ -38,8 +52,8 @@ public:
   user_type check_stage_end();
   bool is_all_ready();
 
-  int master_find_count;
-  int opponent_find_count;
+  unsigned int master_find_count;
+  unsigned int opponent_find_count;
   bool is_master_ready;
   bool is_opponent_ready;
 
@@ -57,7 +71,7 @@ public:
   std::vector<stage> query_game_infos();
   bool check_game_end();
   user_type get_game_winner();
-  std::tuple<bool, user_type> check_point(user_type type, vec2 v);
+  check_point_rtn check_point(user_type type, vec2 v);
 
   int ready_stage(user_type type);
 
