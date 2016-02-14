@@ -25,20 +25,39 @@ public:
   void send2(json11::Json payload);
 
 
-  void set_uid(const size_t& uid) { uid_ = uid; }  
-  size_t get_uid() { return uid_; }
+  void set_uid(const long long& uid) { uid_ = uid; }  
+  long long get_uid() { return uid_; }
   std::string get_uid_to_string() { return std::to_string(uid_); }
+
+  void set_is_facebook_login(bool is_facebook_login) { is_facebook_login_ = is_facebook_login; }  
+  bool get_is_facebook_login() { return is_facebook_login_; }
+  void set_facebookid(std::string facebookid) { facebookid_ = facebookid; }  
+  std::string& get_facebookid() { return facebookid_; }
+
+  void set_score(int score);
+  int get_score();
+  void set_win_count(int win_count);
+  int get_win_count();
+  void set_lose_count(int lose_count);
+  int get_lose_count();
+  void set_ranking(int ranking);
+  int get_ranking();
 
   void start_alive_time();
   void update_alive_t() { alive_t_ = time(NULL); }
   time_t get_alive_t() { return alive_t_; }
 
-
-
   WsServer& server_;
   std::shared_ptr<WsServer::Connection> connection_;
 
   std::weak_ptr<room> room_ptr;
+
+  int score_;
+  int win_count_;
+  int lose_count_;
+  int ranking_;
+  bool is_facebook_login_;
+  std::string facebookid_;
 };
 
 #endif

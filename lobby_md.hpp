@@ -30,6 +30,7 @@ public:
   void full_room_noti(int rid);
   void start_game_noti(int rid);
   //void update_room_info_noti(std::string type, int rid);
+  void send_chat_list(user_ptr user);
 
   static lobby_md& get() {
     static lobby_md obj;

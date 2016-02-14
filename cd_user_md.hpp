@@ -5,6 +5,7 @@
 #include <map>
 #include "json11.hpp"
 #include "cd_user.hpp"
+#include "server_ws.hpp"
 
 typedef std::shared_ptr<cd_user> user_ptr;  
 
@@ -27,12 +28,20 @@ public:
   //bool init();
   void start_check_alive();
   void stop_check_alive();
-  bool add_user(size_t uid, user_ptr user);
-  bool remove_user(size_t uid);
+  bool add_user(long long uid, user_ptr user);
+  bool remove_user(long long uid);
   bool get_users_size();
+
+  user_ptr get_user(long long uid);
+  void kick_user(long long uid);
+  void kick_user_without_lock(long long uid);
+  
+  void destory() { server_ = nullptr; }
 
   std::atomic<bool> is_on_;
   std::mutex m;
+
+  SocketServer<WS>* server_;
 };
 
 #endif

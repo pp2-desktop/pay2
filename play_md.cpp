@@ -1,5 +1,6 @@
 #include "play_md.hpp"
 #include "lobby_md.hpp"
+#include "db_md.hpp"
 
 room::room(int id, user_ptr user, std::string title, std::string password) {
   id_ = id;
@@ -44,6 +45,7 @@ void room::leave_opponent() {
     };
     user->send2(noti);
     is_ready_ = false;
+    opponent_ = nullptr;
   } else {
     json11::Json noti = json11::Json::object {
       { "type", "leave_playing_opponent_noti" }
@@ -273,11 +275,24 @@ int play_md::create_room(user_ptr user, std::string title, std::string password)
   rooms_[rid_] = sp;
 
   user->room_ptr = sp;
+
+  auto uid = user->get_uid();
+  /*
+  auto rs = db_md::get().execute_query("call get_game_info(" + std::to_string(uid) + ")");
+  while(rs->next()) {
+    auto score = rs->getInt("score");
+    auto win_count = rs->getInt("win_count");
+    auto lose_count = rs->getInt("lose_count");
+  }
+  */
+
+
+
+
   return rid_;
 }
 
 void play_md::destroy_room(int rid) {
-
   std::cout << "삭제 방 번호: " << rid << std::endl;
   std::cout << "삭제전 방 갯수: " << rooms_.size() << std::endl;
 
@@ -286,6 +301,18 @@ void play_md::destroy_room(int rid) {
   lobby_md::get().destroy_room_noti(rid);
   std::cout << "삭제후 방 갯수: " << rooms_.size() << std::endl;
   // 방장이니 로비유저들에게 방폭 사실을 알려줌
+}
+
+void play_md::destroy_playing_room(int rid, long long winner_uid, long long loser_uid) {
+  std::cout << "destroy_playing_room called" << std::endl;
+  std::cout << "삭제 방 번호: " << rid << std::endl;
+  std::cout << "삭제전 방 갯수: " << rooms_.size() << std::endl;
+
+  // 점수 처리 해줌
+
+  rooms_.erase(rid);
+  lobby_md::get().destroy_room_noti(rid);
+  std::cout << "삭제후 방 갯수: " << rooms_.size() << std::endl;
 }
 
 int play_md::find_quick_join_room() {
@@ -320,9 +347,23 @@ bool play_md::join_user(int rid, user_ptr user) {
     user->room_ptr = room;
 
     // 방장에거 유저가 들어온것이라 유저 정보 알려줌
+    auto uid = user->get_uid();
+    
+    std::tuple<int, int> scores = earn_score(room->master_->get_score(), user->get_score());
+    auto earn_score = std::get<0>(scores);
+    auto lose_score = std::get<1>(scores);
+ 
+
     // 방장과 상대측 둘에게 각자의 정보를 보내줌 - 해야할것
     json11::Json noti = json11::Json::object {
-      { "type", "join_opponent_noti" }
+      { "type", "join_opponent_noti" },
+      { "earn_score", earn_score },
+      { "lose_score", lose_score },
+      { "ranking", user->get_ranking() },
+      { "score", user->get_score() },
+      { "win_count", user->get_win_count() },
+      { "lose_count", user->get_lose_count() },
+      { "facebookid", user->get_facebookid() }
     };
     room->master_->send2(noti);
     return true;
@@ -356,11 +397,77 @@ void play_md::leave_user(user_ptr user) {
 	std::cout << "[error] 유저가 방에 있지 않음" << std::endl;
       }
     } else {
+      std::shared_ptr<cd_user> user_ptr = nullptr;
+      // 유저가 강제적으로 나갔으니 종료 처리해줌(방 삭제 등등)
+      if(user->get_uid() == room->master_->get_uid()) {
+        room->master_->room_ptr.reset();
+        room->opponent_->room_ptr.reset();
+        user_ptr = room->opponent_;
+        destroy_playing_room(room->id_, room->opponent_->get_uid(), room->master_->get_uid());
+      } else {
+        user_ptr = room->master_;
+        destroy_playing_room(room->id_, room->master_->get_uid(), room->opponent_->get_uid());
+      }
 
+      if(user_ptr) {
+        json11::Json noti = json11::Json::object {
+          { "type", "game_end_noti" }
+        };
+        user_ptr->send2(noti);
+      }
     }
   }
 
   //user->room_ptr.reset();
 
   //if(user->room_ptr) user->room_ptr = nullptr;
+}
+
+void play_md::send_room_list(user_ptr user) {
+  std::lock_guard<std::mutex> lock(m);
+
+  std::vector<json11::Json> room_list;
+
+  for(auto& room : rooms_) {
+
+    auto room_ptr = room.second;
+
+    if(room_ptr) {
+      auto is_full = false;
+      if(room_ptr->master_ && room_ptr->opponent_) {
+	is_full = true;
+      }
+
+      Json tmp = Json::object({
+  	{ "rid",  room_ptr->id_ },
+  	{ "title", room_ptr->title_ },
+	{ "password", room_ptr->password_ },
+	{ "is_full", is_full }
+      });
+      room_list.push_back(tmp);
+    }
+  }
+
+  json11::Json res = json11::Json::object {
+    { "type", "room_list_res" },
+    { "room_list", room_list }
+  };
+
+  user->send2(res);
+}
+
+float play_md::get_score_percentage(float score) {
+  auto d = score / 400.0f;
+  return 1 / (1 + std::pow(10, d));
+}
+
+std::tuple<int, int> play_md::earn_score(int my_score, int opponent_score) {
+  auto score = static_cast<float>(my_score) - static_cast<float>(opponent_score);
+  float r = get_score_percentage(score);
+    
+  float game_cnt = 30;
+  auto win_score = std::ceil(game_cnt * (1.0f - r));
+  auto lose_score = std::ceil(game_cnt * r);
+
+  return std::tuple<int, int>(win_score, lose_score);
 }

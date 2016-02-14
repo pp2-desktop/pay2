@@ -61,14 +61,41 @@ bool join_room_req(std::shared_ptr<cd_user> user, Json payload) {
   auto r = play_md::get().join_user(rid, user);
 
   if(r) {
+    auto earn_score = 0;
+    auto lose_score = 0;
+    auto master_score = 0;
+    auto master_win_count = 0;
+    auto master_lose_count = 0;
+    auto is_facebook_login = false;
+    std::string facebookid = "";
+
+    if(auto room_ptr = user->room_ptr.lock()) {
+      std::tuple<int, int> scores = play_md::get().earn_score(user->get_score(), room_ptr->master_->get_score());
+      earn_score = std::get<0>(scores);
+      lose_score = std::get<1>(scores);
+      auto master = room_ptr->master_;
+      if(master) {
+	master_score = master->get_score();
+	master_win_count = master->get_win_count();
+	master_lose_count = master->get_lose_count();
+	is_facebook_login = master->get_is_facebook_login();
+	if(is_facebook_login) facebookid = master->get_facebookid();
+      }
+    }
+
     json11::Json res = json11::Json::object {
       { "type", "join_room_res" },
-      { "result", r }
+      { "result", r },
+      { "earn_score", earn_score },
+      { "lose_score", lose_score },
+      { "master_score", master_score },
+      { "master_win_count", master_win_count },
+      { "master_lose_count", master_lose_count },
+      { "facebookid", facebookid }
     };
     user->send2(res);
+    lobby_md::get().full_room_noti(rid);
   }
-
-  lobby_md::get().full_room_noti(rid);
   // 전체에게 유저가 들어와서 꽛 찼다고 알려줌
 
   return true;

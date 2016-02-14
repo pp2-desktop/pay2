@@ -2,6 +2,7 @@
 #include "log4cxx_md.hpp"
 #include "cd_handler_md.hpp"
 #include "cd_user_md.hpp"
+#include "db_md.hpp"
 #include "json11.hpp"
 #include <time.h>
 using namespace std;
@@ -22,18 +23,29 @@ int main() {
     });
   */
   
-  std::thread t2( [] {
-      cd_user_md::get().start_check_alive();
-    });
-
   bool r = cd_handler_md::get().init();
   if(!r) {
     std::cout << "[error] fail cd_handler_md init" << std::endl;
     return 1;
   }
+
+  r = db_md::get().init("52.34.125.190", "pay2", "badagl9721", 4);
+  if(!r) {
+    std::cout << "[error] fail db_md init" << std::endl;
+    return 1;
+  }
+
+  std::cout << "[debug] 52.34.125.190 db 접속 성공" << std::endl;
+
+  std::thread t2( [] {
+      cd_user_md::get().start_check_alive();
+    });
+
     //WebSocket (WS)-server at port 8080 using 4 threads
     WsServer server(8080, 8);
-    
+
+    cd_user_md::get().server_ = &server;
+
     //Example 1: echo WebSocket endpoint
     //  Added debug messages for example use of the callbacks
     //  Test with the following JavaScript:
@@ -115,6 +127,7 @@ connection, send_stream);
 	std::shared_ptr<cd_user> user = std::make_shared<cd_user>(server, connection);
 	connection->cd_user_ptr = user;
 	// 잠시 고유 아이디로 설정
+	/*
 	user->set_uid((size_t)connection.get());
 	if(cd_user_md::get().add_user(user->get_uid(), user)) {
 	  std::cout << "[debug] 유저매니져 유저 추가 성공" << std::endl;
@@ -122,6 +135,7 @@ connection, send_stream);
 	} else {
 	  std::cout << "[error] 유저매니져 유저 추가 실패" << std::endl;
 	}
+	*/
 
 	//vs_room_md::get().users.push_back(user);
 	//connection->cd_user_ptr = std::unique_ptr<cd_user>(new cd_user(server, connection));
@@ -190,6 +204,7 @@ connection, send_stream);
     
     server_thread.join();
     cd_user_md::get().stop_check_alive();
+    cd_user_md::get().destory();
     t2.join();
     //t.join();
     

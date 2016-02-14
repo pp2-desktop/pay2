@@ -238,4 +238,3 @@ check_point_rtn game_info::check_point(user_type type, vec2 v) {
   // 없는 결과값
   return rtn;
 }
-

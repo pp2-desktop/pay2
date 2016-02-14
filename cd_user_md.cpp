@@ -23,26 +23,23 @@ void cd_user_md::start_check_alive() {
       for (auto& kv : users_) {
         auto user = kv.second;
         //std::cout << kv.first << " has value " << kv.second << std::endl;
-        if(static_cast<time_t>(n - kv.second->get_alive_t()) > WAIT_SEC) {
+        if(static_cast<time_t>(n - kv.second->get_alive_t()) > WAIT_SEC+10) {
 
-          /*
-	  if(user->room_ptr != nullptr) {
-	    play_md::get().leave_user(user);
+	  if(server_) {
+	    std::cout << "[noti] kick user uid: " << user->get_uid() << std::endl;
+	    server_->send_close(user->connection_, 2);
+            user->destory();
+            kick_user_without_lock(user->get_uid());
+	  } else {
+	    std::cout << "[error] server is nullptr" << std::endl;
 	  }
-          */
-
-          /*
-            if(user->get_is_seat()) {
-            json11::Json res = json11::Json::object {
-            { "type", "kick_user_notify" },
-            { "reason", "alive_t_expired" }
-            };
-            user->send2(res);
-            vs_room_md::get().leave_room(user);
-            }
-          */
+         
         } else {
-
+          std::cout << "[debug-check_alive] 연결중 uid: " << user->get_uid() << std::endl;
+	 json11::Json res = json11::Json::object {
+            { "type", "update_alive_noti" },
+	 };
+	 user->send2(res);
         }
       }
     }
@@ -56,7 +53,7 @@ void cd_user_md::stop_check_alive() {
   //is_on_ = false;
 }
 
-bool cd_user_md::add_user(size_t uid, user_ptr user) {
+bool cd_user_md::add_user(long long uid, user_ptr user) {
   std::lock_guard<std::mutex> lock(m);
   auto it = users_.find(uid);
   if(it != users_.end()) {
@@ -67,9 +64,8 @@ bool cd_user_md::add_user(size_t uid, user_ptr user) {
   return true;
 }
 
-bool cd_user_md::remove_user(size_t uid) {
+bool cd_user_md::remove_user(long long uid) {
   std::lock_guard<std::mutex> lock(m);
-
   auto it = users_.find(uid);
   if(it == users_.end()) {
     return false;
@@ -81,4 +77,28 @@ bool cd_user_md::remove_user(size_t uid) {
 
 bool cd_user_md::get_users_size() {
   return users_.size();
+}
+
+user_ptr cd_user_md::get_user(long long uid) {
+  auto it = users_.find(uid);
+  if(it != users_.end()) {
+    return it->second;
+  }
+  return nullptr;
+}
+
+void cd_user_md::kick_user(long long uid) {
+  std::lock_guard<std::mutex> lock(m);
+  auto user_ptr = get_user(uid);
+  if(user_ptr) {
+    server_->send_close(user_ptr->connection_, 2);
+    user_ptr->destory();
+  }
+}
+
+void cd_user_md::kick_user_without_lock(long long uid) {
+  auto user_ptr = get_user(uid);
+  if(user_ptr) {
+    user_ptr->destory();
+  }
 }

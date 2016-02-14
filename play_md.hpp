@@ -56,12 +56,17 @@ public:
 
   int create_room(user_ptr user, std::string title, std::string password);
   void destroy_room(int rid);
+  void destroy_playing_room(int rid, long long winner_uid, long long loser_uid);
   int find_quick_join_room();
 
   bool join_user(int rid, user_ptr user);
   void leave_user(user_ptr user);
   void update_room_info(int rid, std::string type);
 
+  void send_room_list(user_ptr user);
+
+  float get_score_percentage(float score);
+  std::tuple<int, int> earn_score(int my_score, int opponent_score);
 
   static play_md& get() {
     static play_md obj;

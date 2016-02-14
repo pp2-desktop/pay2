@@ -113,6 +113,11 @@ void lobby_md::start_game_noti(int rid) {
   }
 }
 
+void lobby_md::send_chat_list(user_ptr user) {
+  std::cout << "send_chat_list in lobby_md" << std::endl;
+
+}
+
 /*
 void lobby_md::update_room_info_noti(std::string type, int rid) {
   std::lock_guard<std::mutex> lock(m);
