@@ -26,6 +26,7 @@ public:
   void leave_opponent();
 
   void ready_game();
+  bool is_ready_game();
   void start_game();
   void ready_stage(user_ptr user);
   void check_point(user_ptr user, int user_stage_count, vec2 point);

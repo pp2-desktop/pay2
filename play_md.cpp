@@ -59,7 +59,7 @@ void room::leave_opponent() {
 }
 
 void room::ready_game() {
-  std::lock_guard<std::mutex> lock(m);
+  //std::lock_guard<std::mutex> lock(m);
   if(is_ready_) return;
 
   is_ready_ = true;
@@ -68,6 +68,11 @@ void room::ready_game() {
     { "type", "ready_game_noti" }
   };
   user->send2(noti);
+}
+
+bool room::is_ready_game() {
+  //std::lock_guard<std::mutex> lock(m);
+  return is_ready_;
 }
 
 void room::start_game() {
@@ -359,11 +364,12 @@ bool play_md::join_user(int rid, user_ptr user) {
       { "type", "join_opponent_noti" },
       { "earn_score", earn_score },
       { "lose_score", lose_score },
-      { "ranking", user->get_ranking() },
+      { "name", user->get_name() },
       { "score", user->get_score() },
       { "win_count", user->get_win_count() },
       { "lose_count", user->get_lose_count() },
-      { "facebookid", user->get_facebookid() }
+      { "facebookid", user->get_facebookid() },
+      { "ranking", user->get_ranking() },
     };
     room->master_->send2(noti);
     return true;
@@ -386,11 +392,13 @@ void play_md::leave_user(user_ptr user) {
   if(it != rooms_.end()) {
     auto room = it->second;
     if(room->status_ == room::lobby) {
-      if(room->master_->get_uid() == user->get_uid()) {
+      auto master = room->master_;
+      auto opponent = room->opponent_;
+      if(master && master->get_uid() == user->get_uid()) {
 	room->leave_master();
 	destroy_room(room->id_);
       
-      } else if(room->opponent_->get_uid() == user->get_uid()) {
+      } else if(opponent && opponent->get_uid() == user->get_uid()) {
 	room->leave_opponent();
       
       } else {

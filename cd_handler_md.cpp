@@ -46,6 +46,11 @@ bool cd_handler_md::init() {
   r &= add_payload("ready_stage_noti", ready_stage_noti);
   r &= add_payload("check_point_req", check_point_req);
 
+  r &= add_payload("master_info_req", master_info_req);
+  r &= add_payload("opponent_info_req", opponent_info_req);
+  r &= add_payload("kick_opponent_noti", kick_opponent_noti);
+  r &= add_payload("check_ready_opponent_req", check_ready_opponent_req);
+
   return r;
 }
  

@@ -18,5 +18,9 @@ bool ready_game_noti(std::shared_ptr<cd_user> user, Json payload);
 bool ready_stage_noti(std::shared_ptr<cd_user> user, Json payload);
 bool check_point_req(std::shared_ptr<cd_user> user, Json payload);
 
+bool master_info_req(std::shared_ptr<cd_user> user, Json payload);
+bool opponent_info_req(std::shared_ptr<cd_user> user, Json payload);
+bool kick_opponent_noti(std::shared_ptr<cd_user> user, Json payload);
+bool check_ready_opponent_req(std::shared_ptr<cd_user> user, Json payload);
 
 #endif

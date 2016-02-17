@@ -58,44 +58,16 @@ bool quick_join_req(std::shared_ptr<cd_user> user, Json payload) {
 bool join_room_req(std::shared_ptr<cd_user> user, Json payload) {
 
   auto rid = payload["rid"].int_value();
-  auto r = play_md::get().join_user(rid, user);
+  auto result = play_md::get().join_user(rid, user);
 
-  if(r) {
-    auto earn_score = 0;
-    auto lose_score = 0;
-    auto master_score = 0;
-    auto master_win_count = 0;
-    auto master_lose_count = 0;
-    auto is_facebook_login = false;
-    std::string facebookid = "";
 
-    if(auto room_ptr = user->room_ptr.lock()) {
-      std::tuple<int, int> scores = play_md::get().earn_score(user->get_score(), room_ptr->master_->get_score());
-      earn_score = std::get<0>(scores);
-      lose_score = std::get<1>(scores);
-      auto master = room_ptr->master_;
-      if(master) {
-	master_score = master->get_score();
-	master_win_count = master->get_win_count();
-	master_lose_count = master->get_lose_count();
-	is_facebook_login = master->get_is_facebook_login();
-	if(is_facebook_login) facebookid = master->get_facebookid();
-      }
-    }
+  json11::Json res = json11::Json::object {
+    { "type", "join_room_res" },
+    { "result", result }
+  };
+  user->send2(res);
 
-    json11::Json res = json11::Json::object {
-      { "type", "join_room_res" },
-      { "result", r },
-      { "earn_score", earn_score },
-      { "lose_score", lose_score },
-      { "master_score", master_score },
-      { "master_win_count", master_win_count },
-      { "master_lose_count", master_lose_count },
-      { "facebookid", facebookid }
-    };
-    user->send2(res);
-    lobby_md::get().full_room_noti(rid);
-  }
+  if(result) lobby_md::get().full_room_noti(rid);
   // 전체에게 유저가 들어와서 꽛 찼다고 알려줌
 
   return true;
@@ -144,5 +116,141 @@ bool check_point_req(std::shared_ptr<cd_user> user, Json payload) {
     room_ptr->check_point(user, stage_count, vec2(x, y));
   }
 
+  return true;
+}
+
+bool master_info_req(std::shared_ptr<cd_user> user, Json payload) {
+  auto result = true;
+
+  auto earn_score = 0;
+  auto lose_score = 0;
+
+  std::string name = "";
+  auto score = 0;
+  auto win_count = 0;
+  auto lose_count = 0;
+  auto ranking = 0;
+  auto is_facebook_login = false;
+  std::string facebookid = "";
+
+  if(auto room_ptr = user->room_ptr.lock()) {
+    auto master = room_ptr->master_;
+    if(!master) {
+      result = false;
+    }
+
+   std::tuple<int, int> scores = play_md::get().earn_score(user->get_score(), master->get_score());
+   earn_score = std::get<0>(scores);
+   lose_score = std::get<1>(scores);
+   name = master->get_name();
+   score = master->get_score();
+   win_count = master->get_win_count();
+   lose_count = master->get_lose_count();
+   ranking = master->get_ranking();
+   is_facebook_login = master->get_is_facebook_login();
+   if(is_facebook_login) facebookid = master->get_facebookid();
+
+  } else {
+    result = false;
+  }
+
+  json11::Json res = json11::Json::object {
+    { "type", "master_info_res" },
+    { "result", result },
+    { "earn_score", earn_score },
+    { "lose_score", lose_score },
+    { "name", name },
+    { "score", score },
+    { "win_count", win_count },
+    { "lose_count", lose_count },
+    { "facebookid", facebookid },
+    { "ranking", ranking }
+  };
+  user->send2(res);
+
+  return true;
+}
+
+bool opponent_info_req(std::shared_ptr<cd_user> user, Json payload) {
+  auto earn_score = 0;
+  auto lose_score = 0;
+
+  std::string name = "";
+  auto score = 0;
+  auto win_count = 0;
+  auto lose_count = 0;
+  auto ranking = 0;
+  auto is_facebook_login = false;
+  std::string facebookid = "";
+
+  if(auto room_ptr = user->room_ptr.lock()) {
+    auto opponent = room_ptr->opponent_;
+
+    if(!opponent) {
+      json11::Json res = json11::Json::object {
+        { "type", "opponent_info_res" },
+        { "result", false }
+      };
+      user->send2(res);
+      return true;
+    }
+
+    std::tuple<int, int> scores = play_md::get().earn_score(user->get_score(), opponent->get_score());
+    earn_score = std::get<0>(scores);
+    lose_score = std::get<1>(scores);
+    name = opponent->get_name();
+    score = opponent->get_score();
+    win_count = opponent->get_win_count();
+    lose_count = opponent->get_lose_count();
+    ranking = opponent->get_ranking();
+    is_facebook_login = opponent->get_is_facebook_login();
+    if(is_facebook_login) facebookid = opponent->get_facebookid();
+
+ 
+    json11::Json res = json11::Json::object {
+      { "type", "opponent_info_res" },
+      { "result", true },
+      { "earn_score", earn_score },
+      { "lose_score", lose_score },
+      { "name", name },
+      { "score", score },
+      { "win_count", win_count },
+      { "lose_count", lose_count },
+      { "facebookid", facebookid },
+      { "ranking", ranking }
+    };
+    user->send2(res);
+  }
+
+  return true;
+}
+
+bool kick_opponent_noti(std::shared_ptr<cd_user> user, Json payload) {
+ if(auto room_ptr = user->room_ptr.lock()) {
+   auto opponent = room_ptr->opponent_;
+   if(opponent) {
+     json11::Json noti = json11::Json::object {
+       { "type", "kick_opponent_noti" }
+     };
+     opponent->send2(noti);
+   }
+ }
+
+ return true;
+}
+
+bool check_ready_opponent_req(std::shared_ptr<cd_user> user, Json payload) {
+  
+  auto is_ready = false;
+  if(auto room_ptr = user->room_ptr.lock()) {
+    is_ready = room_ptr->is_ready_game();
+  }
+  
+  json11::Json res = json11::Json::object {
+    { "type", "check_ready_opponent_req" },
+    { "is_ready", is_ready },
+  };
+  user->send2(res);
+  
   return true;
 }

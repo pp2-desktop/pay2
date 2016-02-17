@@ -35,11 +35,19 @@ void cd_user::send2(json11::Json payload) {
 void cd_user::destory() {
   std::cout << "user destroy called" << std::endl;
   auto sp = std::shared_ptr<cd_user>(shared_from_this());
-  if(auto room = room_ptr.lock()) {
-    play_md::get().leave_user(sp);
-  }
 
-  lobby_md::get().leave_user(sp);
+  if(sp) {
+    if(auto room = room_ptr.lock()) {
+      std::cout << "destroy step 1" << std::endl;
+      play_md::get().leave_user(sp);
+    }
+
+    std::cout << "destroy step 2" << std::endl;
+    lobby_md::get().leave_user(sp);
+    std::cout << "destroy step 3" << std::endl;
+  } else {
+    std::cout << "sp is nullptr" << std::endl;
+  }
 }
 
 void cd_user::set_score(int score) {

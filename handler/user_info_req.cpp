@@ -14,6 +14,9 @@ bool login_req(std::shared_ptr<cd_user> user, Json payload) {
   std::string name = payload["name"].string_value();
   std::string password = payload["password"].string_value();
 
+  // 시간 갱신
+  user->update_alive_t();
+
   // 중복 로그인 체크
 
 
@@ -24,7 +27,6 @@ bool login_req(std::shared_ptr<cd_user> user, Json payload) {
   try {
     std::unique_ptr<sql::Statement> stmt_ptr2(conn->sql_connection->createStatement());
     std::string query = "call get_game_info(" + uid + ")";
-
 
     if(stmt_ptr2) {
       auto res_ptr = std::shared_ptr<sql::ResultSet>(stmt_ptr2->executeQuery(query));
@@ -53,6 +55,7 @@ bool login_req(std::shared_ptr<cd_user> user, Json payload) {
 	user->send2(res);
 
 	user->set_uid(std::stol(uid));
+        user->set_name(name);
 	if(cd_user_md::get().add_user(user->get_uid(), user)) {
 	  std::cout << "[debug] 유저매니져 유저 추가 성공" << std::endl;
 	  std::cout << "[debug] 유저매니져 사이즈: " << cd_user_md::get().get_users_size() << std::endl;

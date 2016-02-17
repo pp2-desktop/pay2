@@ -3,7 +3,7 @@
 #include <thread>
 #include <chrono>
 
-#define WAIT_SEC 30
+#define WAIT_SEC 20
 
 cd_user_md::cd_user_md(): is_on_(true) {
 
@@ -23,10 +23,11 @@ void cd_user_md::start_check_alive() {
       for (auto& kv : users_) {
         auto user = kv.second;
         //std::cout << kv.first << " has value " << kv.second << std::endl;
-        if(static_cast<time_t>(n - kv.second->get_alive_t()) > WAIT_SEC+10) {
+        if(static_cast<time_t>(n - kv.second->get_alive_t()) > WAIT_SEC) {
 
 	  if(server_) {
-	    std::cout << "[noti] kick user uid: " << user->get_uid() << std::endl;
+	    std::cout << "[noti] 킥 당한 유저아이디: " << user->get_uid() << std::endl;
+            std::cout << "킥 유저 시간 간격" << n - kv.second->get_alive_t() << std::endl;
 	    server_->send_close(user->connection_, 2);
             user->destory();
             kick_user_without_lock(user->get_uid());
@@ -35,7 +36,8 @@ void cd_user_md::start_check_alive() {
 	  }
          
         } else {
-          std::cout << "[debug-check_alive] 연결중 uid: " << user->get_uid() << std::endl;
+          std::cout << "[debug] 연결중 uid: " << user->get_uid() << std::endl;
+          std::cout << "커넥션 유저 시간 간격" << n - kv.second->get_alive_t() << std::endl;
 	 json11::Json res = json11::Json::object {
             { "type", "update_alive_noti" },
 	 };
@@ -45,7 +47,7 @@ void cd_user_md::start_check_alive() {
     }
 
     std::cout << "[debug] wait for 30 sec" << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(WAIT_SEC));
+    std::this_thread::sleep_for(std::chrono::seconds(10));
   }
 }
 

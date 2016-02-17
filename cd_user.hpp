@@ -29,6 +29,9 @@ public:
   long long get_uid() { return uid_; }
   std::string get_uid_to_string() { return std::to_string(uid_); }
 
+  void set_name(std::string name) { name_ = name; }  
+  std::string& get_name() { return name_; }
+
   void set_is_facebook_login(bool is_facebook_login) { is_facebook_login_ = is_facebook_login; }  
   bool get_is_facebook_login() { return is_facebook_login_; }
   void set_facebookid(std::string facebookid) { facebookid_ = facebookid; }  
@@ -52,6 +55,7 @@ public:
 
   std::weak_ptr<room> room_ptr;
 
+  std::string name_;
   int score_;
   int win_count_;
   int lose_count_;
