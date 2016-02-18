@@ -60,7 +60,6 @@ bool join_room_req(std::shared_ptr<cd_user> user, Json payload) {
   auto rid = payload["rid"].int_value();
   auto result = play_md::get().join_user(rid, user);
 
-
   json11::Json res = json11::Json::object {
     { "type", "join_room_res" },
     { "result", result }

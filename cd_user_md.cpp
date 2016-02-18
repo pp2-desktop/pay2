@@ -2,6 +2,7 @@
 #include "play_md.hpp"
 #include <thread>
 #include <chrono>
+#include "db_md.hpp"
 
 #define WAIT_SEC 20
 
@@ -103,4 +104,37 @@ void cd_user_md::kick_user_without_lock(long long uid) {
   if(user_ptr) {
     user_ptr->destory();
   }
+}
+
+void cd_user_md::update_game_info(long long uid) {
+  std::lock_guard<std::mutex> lock(m);
+  auto user_ptr = get_user(uid);
+
+  if(user_ptr) {
+    std::string query = "call get_game_info(" + std::to_string(uid) + ")";
+    auto rs = db_md::get().execute_query(query);
+
+    while(rs->next()) {
+      auto score = rs->getInt("score");
+      auto win_count = rs->getInt("win_count");
+      auto lose_count = rs->getInt("lose_count");
+      auto ranking = rs->getInt("ranking");
+
+      user_ptr->set_score(score);
+      user_ptr->set_win_count(win_count);
+      user_ptr->set_lose_count(lose_count);
+      user_ptr->set_ranking(ranking);
+
+      json11::Json res = json11::Json::object {
+	{ "type", "update_game_info_noti" },
+	{ "result", true },
+	{ "score", score },
+	{ "win_count", win_count },
+	{ "lose_count", lose_count },
+	{ "ranking", ranking }
+      };
+      user_ptr->send2(res);
+    }
+  }
+
 }

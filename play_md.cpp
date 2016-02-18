@@ -1,6 +1,7 @@
 #include "play_md.hpp"
 #include "lobby_md.hpp"
 #include "db_md.hpp"
+#include "cd_user_md.hpp"
 
 room::room(int id, user_ptr user, std::string title, std::string password) {
   id_ = id;
@@ -216,6 +217,16 @@ void room::check_point(user_ptr user, int user_stage_count, vec2 point) {
     is_playing_ = false;
     is_ready_ = false;
     status_ = lobby;
+
+    if(game_winner_string == "master") {
+      play_md::get().update_score(master_->get_uid(), master_->get_score(), opponent_->get_uid(), opponent_->get_score());
+    } else {
+      play_md::get().update_score(opponent_->get_uid(), opponent_->get_score(), master_->get_uid(), master_->get_score());
+    }
+
+    cd_user_md::get().update_game_info(master_->get_uid());
+    cd_user_md::get().update_game_info(opponent_->get_uid());
+
     return;
   }
 
@@ -281,7 +292,7 @@ int play_md::create_room(user_ptr user, std::string title, std::string password)
 
   user->room_ptr = sp;
 
-  auto uid = user->get_uid();
+  //auto uid = user->get_uid();
   /*
   auto rs = db_md::get().execute_query("call get_game_info(" + std::to_string(uid) + ")");
   while(rs->next()) {
@@ -308,12 +319,27 @@ void play_md::destroy_room(int rid) {
   // 방장이니 로비유저들에게 방폭 사실을 알려줌
 }
 
-void play_md::destroy_playing_room(int rid, long long winner_uid, long long loser_uid) {
+void play_md::destroy_playing_room(int rid, long long winner_uid, int winner_score, long long loser_uid, int loser_score) {
   std::cout << "destroy_playing_room called" << std::endl;
   std::cout << "삭제 방 번호: " << rid << std::endl;
   std::cout << "삭제전 방 갯수: " << rooms_.size() << std::endl;
 
   // 점수 처리 해줌
+  auto scores = earn_score(winner_score, loser_score);
+  auto add_score = std::get<0>(scores);
+
+  scores = earn_score(loser_score, winner_score);
+  auto sub_score = std::get<0>(scores);
+
+
+  std::string query = "call update_users_score(" + std::to_string(winner_uid) + "," + std::to_string(add_score) + "," + std::to_string(loser_uid) + "," + std::to_string(sub_score)  +")";
+
+  auto r = db_md::get().execute(query);
+
+  if(!r) {
+    std::cout << "[error] db 쿼리: " << query << std::endl;
+  }
+
 
   rooms_.erase(rid);
   lobby_md::get().destroy_room_noti(rid);
@@ -411,10 +437,10 @@ void play_md::leave_user(user_ptr user) {
         room->master_->room_ptr.reset();
         room->opponent_->room_ptr.reset();
         user_ptr = room->opponent_;
-        destroy_playing_room(room->id_, room->opponent_->get_uid(), room->master_->get_uid());
+        destroy_playing_room(room->id_, room->opponent_->get_uid(), room->opponent_->get_score(), room->master_->get_uid(), room->master_->get_score());
       } else {
         user_ptr = room->master_;
-        destroy_playing_room(room->id_, room->master_->get_uid(), room->opponent_->get_uid());
+        destroy_playing_room(room->id_, room->master_->get_uid(), room->master_->get_score(), room->opponent_->get_uid(), room->opponent_->get_score());
       }
 
       if(user_ptr) {
@@ -478,4 +504,21 @@ std::tuple<int, int> play_md::earn_score(int my_score, int opponent_score) {
   auto lose_score = std::ceil(game_cnt * r);
 
   return std::tuple<int, int>(win_score, lose_score);
+}
+
+void play_md::update_score(long long winner_uid, int winner_score, long long loser_uid, int loser_score) {
+
+  auto scores = earn_score(winner_score, loser_score);
+  auto add_score = std::get<0>(scores);
+
+  scores = earn_score(loser_score, winner_score);
+  auto sub_score = std::get<0>(scores);
+
+  std::string query = "call update_users_score(" + std::to_string(winner_uid) + "," + std::to_string(add_score) + "," + std::to_string(loser_uid) + "," + std::to_string(sub_score)  +")";
+
+  auto r = db_md::get().execute(query);
+
+  if(!r) {
+    std::cout << "[error] db 쿼리: " << query << std::endl;
+  }
 }

@@ -31,7 +31,6 @@ public:
   void ready_stage(user_ptr user);
   void check_point(user_ptr user, int user_stage_count, vec2 point);
 
-
   std::mutex m;
   user_ptr master_;
   user_ptr opponent_;
@@ -57,7 +56,7 @@ public:
 
   int create_room(user_ptr user, std::string title, std::string password);
   void destroy_room(int rid);
-  void destroy_playing_room(int rid, long long winner_uid, long long loser_uid);
+  void destroy_playing_room(int rid, long long winner_uid, int winner_score, long long loser_uid, int loser_score);
   int find_quick_join_room();
 
   bool join_user(int rid, user_ptr user);
@@ -68,6 +67,7 @@ public:
 
   float get_score_percentage(float score);
   std::tuple<int, int> earn_score(int my_score, int opponent_score);
+  void update_score(long long winner_uid, int winner_score, long long loser_uid, int loser_score);
 
   static play_md& get() {
     static play_md obj;
