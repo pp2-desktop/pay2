@@ -6,6 +6,7 @@
 #include "json11.hpp"
 #include "cd_user.hpp"
 #include "game_info.hpp"
+#include "img_info.hpp"
 
 class room;
 typedef std::shared_ptr<cd_user> user_ptr;
@@ -77,6 +78,7 @@ public:
   std::mutex m;
   //std::map<size_t, user_ptr> users_;
   std::map<int, room_ptr> rooms_;
+  img_info img_info_;
 
   int rid_;
 };

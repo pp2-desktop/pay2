@@ -1,4 +1,6 @@
 #include "game_info.hpp"
+#include "play_md.hpp"
+#include "db_md.hpp"
 #include <iostream>
 
 vec2::vec2() {
@@ -104,79 +106,44 @@ game_info::~game_info() {
 
 std::vector<stage> game_info::query_game_infos() {
   // 경기 시작전 모든 정보들을 가져온다.
+  stages.clear();
+
+  std::cout << "stages.size: " << stages.size() << std::endl;
+
   // db에서 정보 가져오기
-  dummy_stages();
+  auto ids = play_md::get().img_info_.generate_ids(max_stage_count);
+  std::string ids_query = "";
 
-  return stages;
-}
+  for(unsigned i=0; i<ids.size(); i++) {
+    if(i == ids.size()-1) {
+      ids_query += std::to_string(ids[i]);
+    } else {
+      ids_query += std::to_string(ids[i]) + ",";
+    }
+  }
 
-void game_info::dummy_stages() {
-  for(auto i=0; i<max_stage_count; i++) {
+  std::string query = "call get_img_info("+ ids_query + ")";
+
+  std::cout << "query: " << query << std::endl;
+
+  auto rs = db_md::get().execute_query(query);
+
+  while(rs->next()) {
     stage game_stage;
 
-    if(i == 0) {
-      game_stage.img = "germany";
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(124, 104)));
+    std::cout << "@@ id: " << rs->getInt("id") << "@@" <<  std::endl;
+    game_stage.img = rs->getString("name");
 
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(200, 363)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(362, 102)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(357, 562)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(484, 316)));
-
-    } else if(i == 1) {
-      game_stage.img = "spain";
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(190, 307)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(334, 568)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(394, 318)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(565, 179)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(326, 60)));
-
-    } else if(i == 2) {
-      game_stage.img = "italy";
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(220, 65)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(494, 218)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(87, 512)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(227, 410)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(421, 535)));
-
-    } else if(i == 3) {
-      game_stage.img = "chartres";
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(153, 265)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(423, 113)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(376, 215)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(166, 541)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(465, 441)));
-
-    } else if(i == 4) {
-      game_stage.img = "cablecar";
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(22, 230)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(198, 153)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(351, 250)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(327, 613)));
-
-      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(620, 515)));
+    auto point_count = rs->getInt("point_count");
+    for(auto i=0; i<point_count; i++) {
+      std::string point_x = "point" + std::to_string(i) + "_x";
+      std::string point_y = "point" + std::to_string(i) + "_y";
+      game_stage.hidden_point_infos.push_back(std::tuple<user_type, vec2>(none, vec2(rs->getInt(point_x), rs->getInt(point_y))));
     }
-
     stages.push_back(game_stage);
   }
+
+  return stages;
 }
 
 bool game_info::check_game_end() {  
