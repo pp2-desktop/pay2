@@ -246,7 +246,7 @@ bool check_ready_opponent_req(std::shared_ptr<cd_user> user, Json payload) {
   }
   
   json11::Json res = json11::Json::object {
-    { "type", "check_ready_opponent_req" },
+    { "type", "check_ready_opponent_res" },
     { "is_ready", is_ready },
   };
   user->send2(res);

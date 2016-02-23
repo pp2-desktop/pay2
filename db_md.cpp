@@ -56,6 +56,7 @@ bool db_md::execute(std::string query) {
 
     if(stmt_ptr2) {
       rtn = stmt_ptr2->execute(query);
+      if(!rtn) rtn = true;
       stmt_ptr2->getMoreResults();
     }
   } catch (sql::SQLException& e) {

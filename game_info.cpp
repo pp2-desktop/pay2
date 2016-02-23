@@ -205,3 +205,19 @@ check_point_rtn game_info::check_point(user_type type, vec2 v) {
   // 없는 결과값
   return rtn;
 }
+
+int game_info::get_perfect_stage_count(user_type type) {
+  int count = 0;
+  for(auto& stage : stages) {
+    bool is_perfect_stage = true;
+    for(auto& hidden_point : stage.hidden_point_infos) {
+      auto find_type = std::get<0>(hidden_point);
+      if(type != find_type) {
+	is_perfect_stage = false;
+	break;
+      }
+    }
+    if(is_perfect_stage) count++;
+  }
+  return count;
+}

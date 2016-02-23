@@ -28,12 +28,12 @@ void room::leave_master() {
       { "type", "room_destroy_noti" }
     };
     user->send2(noti);
-  } else {
+  } /* else {
     json11::Json noti = json11::Json::object {
       { "type", "room_destroy_noti" }
     };
     user->send2(noti);
-  }
+    } */
 }
 
 void room::leave_opponent() {
@@ -47,7 +47,7 @@ void room::leave_opponent() {
     user->send2(noti);
     is_ready_ = false;
     opponent_ = nullptr;
-  } else {
+  } /* else {
     json11::Json noti = json11::Json::object {
       { "type", "leave_playing_opponent_noti" }
     };
@@ -56,7 +56,7 @@ void room::leave_opponent() {
     is_playing_ = false;
     is_ready_ = false;
     status_ = lobby;
-  }
+  } */
 }
 
 void room::ready_game() {
@@ -131,6 +131,7 @@ void room::start_game() {
 
   master_->send2(res);
   opponent_->send2(res);
+  status_ = playing;
 }
 
 void room::ready_stage(user_ptr user) {
@@ -154,7 +155,7 @@ void room::ready_stage(user_ptr user) {
   };
   master_->send2(noti);
   opponent_->send2(noti);
-  status_ = playing;
+  //status_ = playing;
 }
 
 void room::check_point(user_ptr user, int user_stage_count, vec2 point) {
@@ -218,10 +219,16 @@ void room::check_point(user_ptr user, int user_stage_count, vec2 point) {
     is_ready_ = false;
     status_ = lobby;
 
+    auto master_perfect_count = game_info_ptr->get_perfect_stage_count(user_type::master);
+    auto opponent_perfect_count = game_info_ptr->get_perfect_stage_count(user_type::opponent);
+   
+    std::cout << "master perfect count: " << master_perfect_count << std::endl;
+    std::cout << "opponent perfect count: " << opponent_perfect_count << std::endl;
+
     if(game_winner_string == "master") {
-      play_md::get().update_score(master_->get_uid(), master_->get_score(), opponent_->get_uid(), opponent_->get_score());
+      play_md::get().update_score(master_->get_uid(), master_->get_score(), master_perfect_count, opponent_->get_uid(), opponent_->get_score(), opponent_perfect_count);
     } else {
-      play_md::get().update_score(opponent_->get_uid(), opponent_->get_score(), master_->get_uid(), master_->get_score());
+      play_md::get().update_score(opponent_->get_uid(), opponent_->get_score(), opponent_perfect_count, master_->get_uid(), master_->get_score(), master_perfect_count);
     }
 
     cd_user_md::get().update_game_info(master_->get_uid());
@@ -319,29 +326,30 @@ void play_md::destroy_room(int rid) {
   // 방장이니 로비유저들에게 방폭 사실을 알려줌
 }
 
-void play_md::destroy_playing_room(int rid, long long winner_uid, int winner_score, long long loser_uid, int loser_score) {
+void play_md::destroy_playing_room(int rid, long long winner_uid, int winner_score, int winner_perfect_count, long long loser_uid, int loser_score, int loser_perfect_count) {
   std::cout << "destroy_playing_room called" << std::endl;
   std::cout << "삭제 방 번호: " << rid << std::endl;
   std::cout << "삭제전 방 갯수: " << rooms_.size() << std::endl;
 
   // 점수 처리 해줌
   auto scores = earn_score(winner_score, loser_score);
-  auto add_score = std::get<0>(scores);
+  auto add_score = std::get<0>(scores) + (perfect_stage_score * winner_perfect_count);
 
   scores = earn_score(loser_score, winner_score);
-  auto sub_score = std::get<0>(scores);
-
+  auto sub_score = std::get<1>(scores) - (perfect_stage_score * loser_perfect_count);
 
   std::string query = "call update_users_score(" + std::to_string(winner_uid) + "," + std::to_string(add_score) + "," + std::to_string(loser_uid) + "," + std::to_string(sub_score)  +")";
 
   auto r = db_md::get().execute(query);
 
+  std::cout << "r: " << r << std::endl;
+
   if(!r) {
     std::cout << "[error] db 쿼리: " << query << std::endl;
   }
 
-
   rooms_.erase(rid);
+  cd_user_md::get().update_game_info_without_lock(winner_uid);
   lobby_md::get().destroy_room_noti(rid);
   std::cout << "삭제후 방 갯수: " << rooms_.size() << std::endl;
 }
@@ -383,7 +391,6 @@ bool play_md::join_user(int rid, user_ptr user) {
     std::tuple<int, int> scores = earn_score(room->master_->get_score(), user->get_score());
     auto earn_score = std::get<0>(scores);
     auto lose_score = std::get<1>(scores);
- 
 
     // 방장과 상대측 둘에게 각자의 정보를 보내줌 - 해야할것
     json11::Json noti = json11::Json::object {
@@ -418,6 +425,7 @@ void play_md::leave_user(user_ptr user) {
   if(it != rooms_.end()) {
     auto room = it->second;
     if(room->status_ == room::lobby) {
+      std::cout << "[debug] LOBBY" << std::endl;
       auto master = room->master_;
       auto opponent = room->opponent_;
       if(master && master->get_uid() == user->get_uid()) {
@@ -431,16 +439,22 @@ void play_md::leave_user(user_ptr user) {
 	std::cout << "[error] 유저가 방에 있지 않음" << std::endl;
       }
     } else {
+      std::cout << "[debug] PLAYING" << std::endl;
       std::shared_ptr<cd_user> user_ptr = nullptr;
+      auto master_perfect_count = room->game_info_ptr->get_perfect_stage_count(user_type::master);
+      auto opponent_perfect_count = room->game_info_ptr->get_perfect_stage_count(user_type::opponent);
+      std::cout << "master perfect count: " << master_perfect_count << std::endl;
+      std::cout << "opponent perfect count: " << opponent_perfect_count << std::endl;
+
       // 유저가 강제적으로 나갔으니 종료 처리해줌(방 삭제 등등)
       if(user->get_uid() == room->master_->get_uid()) {
         room->master_->room_ptr.reset();
         room->opponent_->room_ptr.reset();
         user_ptr = room->opponent_;
-        destroy_playing_room(room->id_, room->opponent_->get_uid(), room->opponent_->get_score(), room->master_->get_uid(), room->master_->get_score());
+        destroy_playing_room(room->id_, room->opponent_->get_uid(), room->opponent_->get_score(), opponent_perfect_count, room->master_->get_uid(), room->master_->get_score(),  master_perfect_count);
       } else {
         user_ptr = room->master_;
-        destroy_playing_room(room->id_, room->master_->get_uid(), room->master_->get_score(), room->opponent_->get_uid(), room->opponent_->get_score());
+        destroy_playing_room(room->id_, room->master_->get_uid(), room->master_->get_score(), master_perfect_count, room->opponent_->get_uid(), room->opponent_->get_score(), opponent_perfect_count);
       }
 
       if(user_ptr) {
@@ -500,19 +514,22 @@ std::tuple<int, int> play_md::earn_score(int my_score, int opponent_score) {
   float r = get_score_percentage(score);
     
   float game_cnt = 30;
-  auto win_score = std::ceil(game_cnt * (1.0f - r));
-  auto lose_score = std::ceil(game_cnt * r);
+  auto win_score = std::ceil(game_cnt * r);
+  auto lose_score = std::ceil(game_cnt * (1.0f - r));
 
   return std::tuple<int, int>(win_score, lose_score);
 }
 
-void play_md::update_score(long long winner_uid, int winner_score, long long loser_uid, int loser_score) {
+void play_md::update_score(long long winner_uid, int winner_score, int winner_perfect_count, long long loser_uid, int loser_score, int loser_perfect_count) {
 
   auto scores = earn_score(winner_score, loser_score);
-  auto add_score = std::get<0>(scores);
+  auto add_score = std::get<0>(scores) + (perfect_stage_score * winner_perfect_count);
 
   scores = earn_score(loser_score, winner_score);
-  auto sub_score = std::get<0>(scores);
+  auto sub_score = std::get<1>(scores) - (perfect_stage_score * loser_perfect_count);
+
+  std::cout << "승자가 최종 가져갈 점수: " << add_score << std::endl;
+  std::cout << "패자가 최종 가져갈 점수: " << sub_score << std::endl;
 
   std::string query = "call update_users_score(" + std::to_string(winner_uid) + "," + std::to_string(add_score) + "," + std::to_string(loser_uid) + "," + std::to_string(sub_score)  +")";
 

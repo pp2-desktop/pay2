@@ -74,6 +74,7 @@ public:
   check_point_rtn check_point(user_type type, vec2 v);
 
   int ready_stage(user_type type);
+  int get_perfect_stage_count(user_type type);
 
   void dummy_stages();
 

@@ -36,6 +36,7 @@ public:
   void kick_user(long long uid);
   void kick_user_without_lock(long long uid);
   void update_game_info(long long uid);
+  void update_game_info_without_lock(long long uid);
   
   void destory() { server_ = nullptr; }
 
