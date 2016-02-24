@@ -28,9 +28,12 @@ public:
   void destroy_room_noti(int rid);
 
   void full_room_noti(int rid);
+  void available_room_noti(int rid);
   void start_game_noti(int rid);
   //void update_room_info_noti(std::string type, int rid);
   void send_chat_list(user_ptr user);
+  void send_join_noti(std::string name);
+  void send_leave_noti(std::string name);
 
   static lobby_md& get() {
     static lobby_md obj;

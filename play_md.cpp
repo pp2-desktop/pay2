@@ -19,25 +19,53 @@ room::~room() {
 
 }
 
-void room::leave_master() {
-  if(!opponent_) return;
+bool room::leave_master() {
+ std::lock_guard<std::mutex> lock(m);
 
-  auto user = opponent_;
-  if(status_ == lobby) {
-    json11::Json noti = json11::Json::object {
-      { "type", "room_destroy_noti" }
-    };
-    user->send2(noti);
-  } /* else {
-    json11::Json noti = json11::Json::object {
-      { "type", "room_destroy_noti" }
-    };
-    user->send2(noti);
-    } */
+ if(status_ == lobby) {
+
+   auto opponent = opponent_;
+   if(opponent) {
+     json11::Json noti = json11::Json::object {
+       { "type", "room_destroy_noti" }
+     };
+     opponent->send2(noti);
+   }
+
+   auto user = master_;
+   json11::Json res = json11::Json::object {
+     { "type", "leave_room_res" },
+     { "result", true }
+   };
+   user->send2(res);
+
+   return true;
+ }  else {
+   std::cout << "[error] leave master while playing" << std::endl;
+   auto user = master_;
+   json11::Json res = json11::Json::object {
+     { "type", "leave_room_res" },
+     { "result", false }
+   };
+   user->send2(res);
+   return false;
+   /*
+     json11::Json noti = json11::Json::object {
+     { "type", "room_destroy_noti" }
+     };
+     user->send2(noti);
+   */
+ } 
+
+  return true;
 }
 
-void room::leave_opponent() {
-  if(!master_) return;
+bool room::leave_opponent() {
+
+  std::cout << "leave_opponent called" << std::endl;
+  std::lock_guard<std::mutex> lock(m);
+
+  if(!master_) return false;
 
   auto user = master_;
   if(status_ == lobby) {
@@ -46,17 +74,26 @@ void room::leave_opponent() {
     };
     user->send2(noti);
     is_ready_ = false;
-    opponent_ = nullptr;
-  } /* else {
-    json11::Json noti = json11::Json::object {
-      { "type", "leave_playing_opponent_noti" }
-    };
-    user->send2(noti);
 
-    is_playing_ = false;
-    is_ready_ = false;
-    status_ = lobby;
-  } */
+    auto user = opponent_;
+    json11::Json res = json11::Json::object {
+      { "type", "leave_room_res" },
+      { "result", true }
+    };
+    user->send2(res);
+    opponent_ = nullptr;
+    return true;
+  } else {
+    std::cout << "is playing @@@@" << std::endl;
+    auto user = opponent_;
+    json11::Json res = json11::Json::object {
+      { "type", "leave_room_res" },
+      { "result", false }
+    };
+    user->send2(res);
+    return false;
+  }
+
 }
 
 void room::ready_game() {
@@ -77,11 +114,10 @@ bool room::is_ready_game() {
 }
 
 void room::start_game() {
+  std::cout << "start_game called" << std::endl;
   std::lock_guard<std::mutex> lock(m);
 
-  is_playing_ = true;
   game_info_ptr.reset(new game_info);
-  
 
   if(!master_) {
     json11::Json res = json11::Json::object {
@@ -91,13 +127,17 @@ void room::start_game() {
     opponent_->send2(res);
   }
 
-
   if(!opponent_) {
     json11::Json res = json11::Json::object {
       { "type", "start_game_res" },
       { "result", false }
     };
     master_->send2(res);
+  }
+
+  if(opponent_ == nullptr) {
+    std::cout << "opponent is nullptr" << std::endl;
+    return;
   }
 
   auto stages = game_info_ptr->query_game_infos();
@@ -129,8 +169,15 @@ void room::start_game() {
     { "stage_infos", stage_infos }
   };
 
+  std::cout << "master send start" << std::endl;
   master_->send2(res);
+  std::cout << "master send end" << std::endl;
+
+  std::cout << "opponent send start" << std::endl;
   opponent_->send2(res);
+  std::cout << "opponent send end" << std::endl;
+
+  is_playing_ = true;
   status_ = playing;
 }
 
@@ -429,11 +476,16 @@ void play_md::leave_user(user_ptr user) {
       auto master = room->master_;
       auto opponent = room->opponent_;
       if(master && master->get_uid() == user->get_uid()) {
-	room->leave_master();
-	destroy_room(room->id_);
+	bool r = room->leave_master();
+	if(r) { 
+	  destroy_room(room->id_);
+	}
       
       } else if(opponent && opponent->get_uid() == user->get_uid()) {
-	room->leave_opponent();
+	bool r = room->leave_opponent();
+	if(r) {
+	  lobby_md::get().available_room_noti(rid);
+	}
       
       } else {
 	std::cout << "[error] 유저가 방에 있지 않음" << std::endl;

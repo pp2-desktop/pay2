@@ -23,8 +23,8 @@ public:
   room(int id, user_ptr user, std::string title, std::string password);
   ~room();
 
-  void leave_master();
-  void leave_opponent();
+  bool leave_master();
+  bool leave_opponent();
 
   void ready_game();
   bool is_ready_game();

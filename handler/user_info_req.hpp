@@ -15,4 +15,7 @@ bool update_alive_noti(std::shared_ptr<cd_user> user_ptr, Json payload);
 bool get_user_info_req(std::shared_ptr<cd_user> user_ptr, Json payload);
 bool create_guest_account_req(std::shared_ptr<cd_user> user_ptr, Json payload);
 
+bool update_game_info_noti(std::shared_ptr<cd_user> user_ptr, Json payload);
+bool get_ranking_req(std::shared_ptr<cd_user> user_ptr, Json payload);
+
 #endif

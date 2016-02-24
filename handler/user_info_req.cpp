@@ -7,6 +7,7 @@
 #include "../cd_user_md.hpp"
 #include "../db_md.hpp"
 #include <random>
+#include <vector>
 
 bool login_req(std::shared_ptr<cd_user> user, Json payload) {
   std::cout << "login_req called" << std::endl;
@@ -170,6 +171,73 @@ bool create_guest_account_req(std::shared_ptr<cd_user> user, Json payload) {
    user->send2(res);
    db_md::get().mysql_pool->unborrow(conn);
  }
+
+  return true;
+}
+
+bool update_game_info_noti(std::shared_ptr<cd_user> user, Json payload) {
+  std::string uid = payload["uid"].string_value();
+
+  if(uid == "") {
+    std::cout << "[error] uid is not exist" << std::endl;
+    return false;
+  }
+
+  std::string query = "call get_game_info(" + uid + ")";
+  auto rs = db_md::get().execute_query(query);
+  while(rs->next()) {
+
+    auto score = rs->getInt("score");
+    auto win_count = rs->getInt("win_count");
+    auto lose_count = rs->getInt("lose_count");
+    auto ranking = rs->getInt("ranking");
+
+    json11::Json noti = json11::Json::object {
+      { "type", "update_game_info_noti" },
+      { "result", true },
+      { "score", score },
+      { "win_count", win_count },
+      { "lose_count", lose_count },
+      { "ranking", ranking }
+    };
+    user->send2(noti);
+  }
+
+  //cd_user_md::get().update_game_info(std::stol(uid));
+
+  return true;
+}
+
+bool get_ranking_req(std::shared_ptr<cd_user> user, Json payload) {
+
+  std::vector<json11::Json> ranking_infos;
+  std::string query = "call get_game_ranking()";
+
+  auto rs = db_md::get().execute_query(query);
+
+  while(rs->next()) {
+    std::string name = rs->getString("name");
+    auto score = rs->getInt("score");
+    auto win_count = rs->getInt("win_count");
+    auto lose_count = rs->getInt("lose_count");
+    auto ranking = rs->getInt("ranking");
+
+    Json tmp = Json::object({
+  	{ "name",  name },
+	{ "score", score },
+        { "win_count", win_count },
+        { "lose_count", lose_count },
+        { "ranking", ranking }
+      });
+    ranking_infos.push_back(tmp);
+  }
+
+ json11::Json res = json11::Json::object {
+    { "type", "get_ranking_res" },
+    { "ranking_infos", ranking_infos }
+  };
+
+  user->send2(res);
 
   return true;
 }

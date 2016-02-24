@@ -27,6 +27,9 @@ bool cd_handler_md::init() {
   r &= add_payload("create_guest_account_req", create_guest_account_req);
   r &= add_payload("update_alive_noti", update_alive_noti);
 
+  r &= add_payload("update_game_info_noti", update_game_info_noti);
+  r &= add_payload("get_ranking_req", get_ranking_req);
+
   // lobby_req
   r &= add_payload("join_lobby_req", join_lobby_req);
   r &= add_payload("leave_lobby_req", leave_lobby_req);
