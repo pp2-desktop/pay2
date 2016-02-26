@@ -241,3 +241,24 @@ bool get_ranking_req(std::shared_ptr<cd_user> user, Json payload) {
 
   return true;
 }
+
+bool check_version_req(std::shared_ptr<cd_user> user, Json payload) {
+  auto is_update = false;
+  std::string platform = payload["platform"].string_value();
+  auto client_version = payload["version"].int_value();
+
+  std::cout << "[debug] platform: " << platform << std::endl;
+
+  if(client_version < 2) {
+    is_update = false;
+  }
+
+ json11::Json res = json11::Json::object {
+    { "type", "check_version_res" },
+    { "is_update", is_update }
+  };
+
+  user->send2(res);
+
+  return true;
+}

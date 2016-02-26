@@ -29,6 +29,7 @@ bool cd_handler_md::init() {
 
   r &= add_payload("update_game_info_noti", update_game_info_noti);
   r &= add_payload("get_ranking_req", get_ranking_req);
+  r &= add_payload("check_version_req", check_version_req);
 
   // lobby_req
   r &= add_payload("join_lobby_req", join_lobby_req);
