@@ -8,6 +8,7 @@
 #include "../lobby_md.hpp"
 #include "../play_md.hpp"
 #include "../game_info.hpp"
+#include "../log4cxx_md.hpp"
 
 bool create_room_req(std::shared_ptr<cd_user> user, Json payload) {
 
@@ -24,6 +25,8 @@ bool create_room_req(std::shared_ptr<cd_user> user, Json payload) {
 
   //lobby_md::get().leave_user(user);
   lobby_md::get().create_room_noti(rid, title, password);
+
+  _logt("[create_room_req]" << " uid: " << user->get_uid());
   /*
   std::string uid = payload["uid"].string_value();
   auto r = lobby_md::get().join_user(user_ptr);
@@ -68,7 +71,7 @@ bool join_room_req(std::shared_ptr<cd_user> user, Json payload) {
 
   if(result) lobby_md::get().full_room_noti(rid);
   // 전체에게 유저가 들어와서 꽛 찼다고 알려줌
-
+  _logt("[join_room_req]" << " uid: " << user->get_uid());
   return true;
 }
 
@@ -88,6 +91,8 @@ bool start_game_req(std::shared_ptr<cd_user> user, Json payload) {
     };
     user->send2(res);
   }
+
+  _logt("[start_game_req]" << " uid: " << user->get_uid());
 
   return true;
 }

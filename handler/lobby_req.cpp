@@ -6,6 +6,7 @@
 #include "lobby_req.hpp"
 #include "../cd_user.hpp"
 #include "../lobby_md.hpp"
+#include "../log4cxx_md.hpp"
 
 bool join_lobby_req(std::shared_ptr<cd_user> user, Json payload) {
 
@@ -14,11 +15,14 @@ bool join_lobby_req(std::shared_ptr<cd_user> user, Json payload) {
   auto r = lobby_md::get().join_user(user);
 
   json11::Json res = json11::Json::object {
-    { "type", "join_lobby_res" },
+    { "type", "join_lobby_req" },
     { "result", r }
   };
 
   user->send2(res);
+
+  _logt("[join_lobby_res] " << " uid: " << user->get_uid());
+
   return true;
 }
 
@@ -32,6 +36,9 @@ bool leave_lobby_req(std::shared_ptr<cd_user> user, Json payload) {
   };
 
   user->send2(res);
+
+  _logt("[leave_lobby_req]" << " uid: " << user->get_uid());
+
   return true;
 }
 

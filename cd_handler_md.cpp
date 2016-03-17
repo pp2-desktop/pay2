@@ -4,6 +4,7 @@
 #include "handler/user_info_req.hpp"
 #include "handler/lobby_req.hpp"
 #include "handler/play_req.hpp"
+#include "handler/single_req.hpp"
 
 cd_handler_md::cd_handler_md() {
 
@@ -54,6 +55,10 @@ bool cd_handler_md::init() {
   r &= add_payload("opponent_info_req", opponent_info_req);
   r &= add_payload("kick_opponent_noti", kick_opponent_noti);
   r &= add_payload("check_ready_opponent_req", check_ready_opponent_req);
+
+  // single_req
+  r &= add_payload("single_img_info_req", single_img_info_req);
+  r &= add_payload("max_stage_req", max_stage_req);
 
   return r;
 }

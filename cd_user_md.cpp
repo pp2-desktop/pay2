@@ -4,7 +4,7 @@
 #include <chrono>
 #include "db_md.hpp"
 
-#define WAIT_SEC 20
+#define WAIT_SEC 5
 
 cd_user_md::cd_user_md(): is_on_(true) {
 
@@ -47,8 +47,8 @@ void cd_user_md::start_check_alive() {
       }
     }
 
-    std::cout << "[debug] wait for 30 sec" << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+    //std::cout << "[debug] wait for 30 sec" << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(2));
   }
 }
 

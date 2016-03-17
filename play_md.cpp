@@ -2,6 +2,7 @@
 #include "lobby_md.hpp"
 #include "db_md.hpp"
 #include "cd_user_md.hpp"
+#include "log4cxx_md.hpp"
 
 room::room(int id, user_ptr user, std::string title, std::string password) {
   id_ = id;
@@ -281,6 +282,8 @@ void room::check_point(user_ptr user, int user_stage_count, vec2 point) {
     cd_user_md::get().update_game_info(master_->get_uid());
     cd_user_md::get().update_game_info(opponent_->get_uid());
 
+    _logt("[game end] game winner: " << game_winner_string << ", master uid: " << master_->get_uid() << ", opponent uid: " << opponent_->get_uid());
+
     return;
   }
 
@@ -299,6 +302,8 @@ void room::check_point(user_ptr user, int user_stage_count, vec2 point) {
 
     master_->send2(res);
     opponent_->send2(res);
+
+    _logt("[stage end] stage count: " << stage_count << ", stage winner: " << stage_winner_string);
 
     if(game_info_ptr->stage_count < static_cast<int>(game_info_ptr->stages.size())) {
       game_info_ptr->stage_count++;
